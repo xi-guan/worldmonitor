@@ -17,6 +17,7 @@ paths:
                     Start of time range (inclusive), Unix epoch milliseconds.
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: "1717200000000"
                   schema:
                     type: string
                     format: int64
@@ -26,6 +27,7 @@ paths:
                     End of time range (inclusive), Unix epoch milliseconds.
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: "1717200000000"
                   schema:
                     type: string
                     format: int64
@@ -33,6 +35,7 @@ paths:
                   in: query
                   description: Maximum items per page (1-100).
                   required: false
+                  example: 25
                   schema:
                     type: integer
                     format: int32
@@ -40,12 +43,14 @@ paths:
                   in: query
                   description: Cursor for next page.
                   required: false
+                  example: "next-page-token"
                   schema:
                     type: string
                 - name: type
                   in: query
                   description: Optional threat type filter.
                   required: false
+                  example: "CYBER_THREAT_TYPE_C2_SERVER"
                   schema:
                     type: string
                     enum:
@@ -57,6 +62,7 @@ paths:
                   in: query
                   description: Optional source filter.
                   required: false
+                  example: "CYBER_THREAT_SOURCE_FEODO"
                   schema:
                     type: string
                     enum:
@@ -69,6 +75,7 @@ paths:
                   in: query
                   description: Optional minimum criticality filter.
                   required: false
+                  example: "CRITICALITY_LEVEL_LOW"
                   schema:
                     type: string
                     enum:
@@ -81,6 +88,17 @@ paths:
                     description: Successful response
                     content:
                         application/json:
+                            example:
+                                "pagination":
+                                    "nextCursor": "next-page-token"
+                                    "totalCount": 1
+                                "threats":
+                                    - "country": "US"
+                                      "firstSeenAt": 1717200000000
+                                      "id": "example-id"
+                                      "indicator": "example"
+                                      "indicatorType": "CYBER_THREAT_INDICATOR_TYPE_IP"
+                                      "lastSeenAt": 1717200000000
                             schema:
                                 $ref: '#/components/schemas/ListCyberThreatsResponse'
                 "400":

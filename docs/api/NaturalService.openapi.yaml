@@ -14,6 +14,7 @@ paths:
                   in: query
                   description: Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: 7
                   schema:
                     type: integer
                     format: int32
@@ -22,6 +23,13 @@ paths:
                     description: Successful response
                     content:
                         application/json:
+                            example:
+                                "events":
+                                    - "basin": "example"
+                                      "category": "cs.AI"
+                                      "categoryTitle": "cs.AI"
+                                      "classification": "example"
+                                      "closed": true
                             schema:
                                 $ref: '#/components/schemas/ListNaturalEventsResponse'
                 "400":

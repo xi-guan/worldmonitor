@@ -15,6 +15,7 @@ paths:
                   in: query
                   description: Start of time range (inclusive), Unix epoch milliseconds.
                   required: false
+                  example: "1717200000000"
                   schema:
                     type: string
                     format: int64
@@ -22,6 +23,7 @@ paths:
                   in: query
                   description: End of time range (inclusive), Unix epoch milliseconds.
                   required: false
+                  example: "1717200000000"
                   schema:
                     type: string
                     format: int64
@@ -31,6 +33,7 @@ paths:
                     Maximum items per page (1-100).
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: 25
                   schema:
                     type: integer
                     format: int32
@@ -40,12 +43,14 @@ paths:
                     Cursor for next page.
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: "next-page-token"
                   schema:
                     type: string
                 - name: country
                   in: query
                   description: Optional country filter (ISO 3166-1 alpha-2).
                   required: false
+                  example: "US"
                   schema:
                     type: string
                 - name: min_severity
@@ -54,6 +59,7 @@ paths:
                     Optional minimum severity filter.
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: "SEVERITY_LEVEL_LOW"
                   schema:
                     type: string
                     enum:
@@ -66,6 +72,7 @@ paths:
                     North-east corner latitude of bounding box.
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: 40.7128
                   schema:
                     type: number
                     format: double
@@ -75,6 +82,7 @@ paths:
                     North-east corner longitude of bounding box.
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: -74.006
                   schema:
                     type: number
                     format: double
@@ -84,6 +92,7 @@ paths:
                     South-west corner latitude of bounding box.
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: 40.7128
                   schema:
                     type: number
                     format: double
@@ -93,6 +102,7 @@ paths:
                     South-west corner longitude of bounding box.
                      Accepted but currently ignored; no-op until this handler supports the parameter.
                   required: false
+                  example: -74.006
                   schema:
                     type: number
                     format: double
@@ -101,6 +111,31 @@ paths:
                     description: Successful response
                     content:
                         application/json:
+                            example:
+                                "clusters":
+                                    - "country": "US"
+                                      "endAt": 1717200000000
+                                      "eventCount": 1
+                                      "events":
+                                          - "actors":
+                                              - "example"
+                                            "city": "example"
+                                            "confidence": "CONFIDENCE_LEVEL_LOW"
+                                            "country": "US"
+                                            "eventType": "UNREST_EVENT_TYPE_PROTEST"
+                                            "id": "example-id"
+                                      "id": "example-id"
+                                "events":
+                                    - "actors":
+                                        - "example"
+                                      "city": "example"
+                                      "confidence": "CONFIDENCE_LEVEL_LOW"
+                                      "country": "US"
+                                      "eventType": "UNREST_EVENT_TYPE_PROTEST"
+                                      "id": "example-id"
+                                "pagination":
+                                    "nextCursor": "next-page-token"
+                                    "totalCount": 1
                             schema:
                                 $ref: '#/components/schemas/ListUnrestEventsResponse'
                 "400":
