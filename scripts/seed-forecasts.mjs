@@ -172,6 +172,7 @@ const CYBER_PROB_VOLUME_WEIGHT = 0.5;       // weight of volume in probability f
 const CYBER_PROB_TYPE_WEIGHT = 0.15;        // weight of type diversity in probability formula
 const CONFLICT_BASE_DETECTOR_PROB_MAX = 0.90;
 const UCDP_CONFLICT_ZONE_PROB_MAX = 0.85;
+const UCDP_CONFLICT_ZONE_GATE_PROB_MIN = 0.35;
 const MARKET_DETECTOR_PROB_MAX = 0.85;
 const SUPPLY_CHAIN_DETECTOR_PROB_MAX = 0.85;
 const POLITICAL_DETECTOR_PROB_MAX = 0.80;
@@ -1380,6 +1381,16 @@ function getStateDerivedAllowedBuckets(domain) {
   return [];
 }
 
+const DOMAIN_PROBABILITY_CAPS = {
+  market: MARKET_DETECTOR_PROB_MAX,
+  supply_chain: SUPPLY_CHAIN_DETECTOR_PROB_MAX,
+};
+
+function capDomainProbability(domain, probability) {
+  const cap = DOMAIN_PROBABILITY_CAPS[domain] ?? 1;
+  return Math.min(cap, probability);
+}
+
 function getStateDerivedMinimumScore(domain, bucketId) {
   if (domain === 'supply_chain') {
     if (bucketId === 'freight') return 0.4;
@@ -1557,11 +1568,12 @@ function computeStateDerivedBucketCandidate(domain, stateUnit, bucket, marketCon
 function buildStateDerivedForecast(stateUnit, domain, bucket, candidate, marketContext) {
   const bucketContext = marketContext?.bucketContexts?.[bucket.id] || null;
   const title = buildStateDerivedForecastTitle(domain, stateUnit, bucket.id, bucket.label);
-  const probability = clampUnitInterval(
+  const rawProbability = clampUnitInterval(
     (candidate.score * 0.56) +
     (Number(bucket.pressureScore || 0) * 0.24) +
     (Number(stateUnit?.avgProbability || 0) * 0.18),
   );
+  const probability = capDomainProbability(domain, rawProbability);
   const confidence = clampUnitInterval(
     (candidate.score * 0.34) +
     (Number(bucket.confidence || 0) * 0.28) +
@@ -2045,7 +2057,11 @@ function detectUcdpConflictZones(inputs, emaRiskScores) {
     if (count < 10) continue;
 
     const signals = [{ type: 'ucdp', value: `${count} UCDP conflict events`, weight: 0.5 }];
-    let prob = Math.min(UCDP_CONFLICT_ZONE_PROB_MAX, normalize(count, 5, 100) * 0.7);
+    let prob = Math.min(
+      UCDP_CONFLICT_ZONE_PROB_MAX,
+      UCDP_CONFLICT_ZONE_GATE_PROB_MIN
+        + (normalize(count, 10, 100) * (UCDP_CONFLICT_ZONE_PROB_MAX - UCDP_CONFLICT_ZONE_GATE_PROB_MIN)),
+    );
 
     const emaRisk = emaRiskScores?.get(country?.toLowerCase?.() ?? '');
     if (emaRisk?.velocitySpike) {
@@ -2608,12 +2624,22 @@ const PROJECTION_CURVES = {
 };
 const PROJECTION_PROBABILITY_FLOOR = 0.01;
 const PROJECTION_PROBABILITY_CAP = 0.95;
+const PROJECTION_PEAK_ANCHORED_DOMAINS = new Set(['market']);
+
+function projectionAnchorKeyForHorizon(timeHorizon) {
+  if (timeHorizon === '24h') return 'h24';
+  if (timeHorizon === '30d') return 'd30';
+  return 'd7';
+}
 
 function computeProjections(predictions) {
   for (const pred of predictions) {
     const curve = PROJECTION_CURVES[pred.domain] || { h24: 1, d7: 1, d30: 1 };
-    const anchor = pred.timeHorizon === '24h' ? 'h24' : pred.timeHorizon === '30d' ? 'd30' : 'd7';
-    const anchorMult = curve[anchor] || 1;
+    const peakMult = Math.max(curve.h24 || 0, curve.d7 || 0, curve.d30 || 0);
+    const anchorKey = projectionAnchorKeyForHorizon(pred.timeHorizon);
+    const anchorMult = PROJECTION_PEAK_ANCHORED_DOMAINS.has(pred.domain)
+      ? peakMult
+      : (curve[anchorKey] || peakMult);
     const base = anchorMult > 0 ? pred.probability / anchorMult : pred.probability;
     pred.projections = {
       h24: Math.round(Math.min(PROJECTION_PROBABILITY_CAP, Math.max(PROJECTION_PROBABILITY_FLOOR, base * curve.h24)) * 1000) / 1000,
